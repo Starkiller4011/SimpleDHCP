@@ -407,3 +407,44 @@ void DHCP_SERVER::printRawUDPPayload(uint8_t *packet_buffer, uint16_t packet_siz
     }
     Serial.println();
 }
+
+// ********** DHCP CLIENT **********
+// TODO: Implement this class
+
+DHCP_CLIENT::DHCP_CLIENT(uint8_t chaddr[], uint8_t hlen) {
+    for (int i = 0; i < 16; i++) {
+        if (i < hlen) {
+            H_ADDRESS[i] = chaddr[i];
+        } else {
+            H_ADDRESS[i] = 0;
+        }
+    }
+}
+
+DHCP_CLIENT::~DHCP_CLIENT() {
+    ;
+}
+
+DHCP_MESSAGE DHCP_CLIENT::createDHCPMessage(uint8_t message_type, uint32_t xid) {
+    DHCP_MESSAGE message;
+    message.op = DHCP_BOOTREQUEST;
+    message.htype = DHCP_ETHERNET;
+    message.hlen = DHCP_MAC_ADDRESS_LENGTH;
+    message.hops = 0;
+    message.xid = xid;
+    message.secs = 0;
+    message.flags = DHCP_BROADCAST_FLAG;
+    for (int i = 0; i < 4; i++) {
+        message.ciaddr[i] = 0;
+        message.yiaddr[i] = 0;
+        message.siaddr[i] = 0;
+        message.giaddr[i] = 0;
+    }
+    for (int i = 0; i < 16; i++) {
+        message.chaddr[i] = 0;
+    }
+    for (int i = 0; i < message.hlen; i++) {
+        message.chaddr[i] = H_ADDRESS[i];
+    }
+    return message;
+}
