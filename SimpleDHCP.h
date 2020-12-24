@@ -258,6 +258,8 @@ public:
 class DHCP_TESTER {
 private:
     // Members
+    DHCP_SERVER *_dhcp_server;
+    DHCP_CLIENT *_dhcp_client;
 public:
     DHCP_TESTER();
     ~DHCP_TESTER();
