@@ -241,6 +241,19 @@ public:
     void assignAddressPool(IPAddress, uint8_t);                     // DHCP Server Assign Address Pool range
 };
 
+// DHCP Client Class - TODO: Implement
+class DHCP_CLIENT {
+    friend class DHCP_TESTER;
+private:
+    uint8_t H_ADDRESS[16];
+    DHCP_MESSAGE createDHCPMessage(uint8_t, uint32_t);
+    DHCP_MESSAGE createDHCPMessage(uint8_t, uint32_t, IPAddress);
+public:
+    DHCP_CLIENT();
+    DHCP_CLIENT(uint8_t [], uint8_t);
+    ~DHCP_CLIENT();
+};
+
 // DHCP Unit Tester
 class DHCP_TESTER {
 private:
