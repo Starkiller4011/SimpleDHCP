@@ -192,6 +192,55 @@ typedef struct DHCP_MESSAGE {
     uint8_t     options[DHCP_DEFAULT_OPTIONS_SIZE];                 // DHCP Options - Assumes max DHCP message is DHCP_MESSAGE_SIZE (576) - TODO: Implement dynamic options size
 } DHCP_MESSAGE;
 
+// DHCP Lease Structure
+typedef struct DHCP_LEASE {
+    byte            status;                                         // Lease Status
+    long            expires;                                        // Expiry Time
+    unsigned long   mac_crc;                                        // MAC Cyclic Redundancy Check
+    unsigned long   host_crc;                                       // Host Cyclic Redundancy Check
+} DHCP_LEASE;
+
+// DHCP Address Pool Structure
+typedef struct DHCP_ADDRESS_POOL {
+    uint8_t firstOctet;
+    uint8_t secondOctet;
+    uint8_t thirdOctet;
+    uint8_t range;
+} DHCP_ADDRESS_POOL;
+
+// ********** Classes **********
+
+// DHCP Server Class
+class DHCP_SERVER {
+    friend class DHCP_TESTER;
+private:
+    // Members
+    bool _verbose;
+    EthernetUDP DHCP_SOCKET;                                        // DHCP Server UDP Socket
+    IPAddress SERVER_ADDRESS;                                       // DHCP Server Network Address
+    DHCP_ADDRESS_POOL address_pool;                                 // DHCP Server Address Pool
+    // Methods
+    IPAddress getAddressFromPool();                                 // DHCP Server Get Network Address from pool
+    bool isAddressAvailable(IPAddress);                             // DHCP Server check if network address is valid and available
+    IPAddress assignAddress(IPAddress);                             // DHCP Server Assign Network Address
+    void printDHCPMessage(DHCP_MESSAGE);                            // DHCP Server Print the raw DHCP message
+    void printRawUDPPayload(uint8_t *, uint16_t);                   // DHCP Server Print the raw UDP payload
+    DHCP_MESSAGE parseDHCPRequest(DHCP_MESSAGE);                    // DHCP Server Request Parser
+    DHCP_MESSAGE createDHCPReply(uint8_t, IPAddress, uint32_t);     // DHCP Server Create Reply to Request
+public:
+    // Constructors
+    DHCP_SERVER();                                                  // DHCP Server Default Constructor, this constructor should be avoided
+    DHCP_SERVER(IPAddress, uint8_t);                                // DHCP Server Intended Constructor
+    DHCP_SERVER(IPAddress, uint8_t, bool);                          // DHCP Server Intended Constructor with verbosity option
+    // Destructor
+    ~DHCP_SERVER();                                                 // DHCP Server Destructor
+    // Public methods
+    bool getVerbosity();                                            // DHCP Server get current verbosity
+    bool setVerbosity(bool);                                        // DHCP Server set verbosity
+    uint8_t checkForRequests();                                     // DHCP Server Check for requests
+    void assignAddressPool(IPAddress, uint8_t);                     // DHCP Server Assign Address Pool range
+};
+
 // DHCP Unit Tester
 class DHCP_TESTER {
 private:
