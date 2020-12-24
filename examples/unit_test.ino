@@ -3,7 +3,7 @@
 DHCP_TESTER *dhcp_tester;
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(9600);
     dhcp_tester = new DHCP_TESTER();
     if (dhcp_tester->runTests()) {
         Serial.println("All tests passed");
