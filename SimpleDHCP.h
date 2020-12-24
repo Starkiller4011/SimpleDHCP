@@ -192,6 +192,19 @@ typedef struct DHCP_MESSAGE {
     uint8_t     options[DHCP_DEFAULT_OPTIONS_SIZE];                 // DHCP Options - Assumes max DHCP message is DHCP_MESSAGE_SIZE (576) - TODO: Implement dynamic options size
 } DHCP_MESSAGE;
 
+// DHCP Client Class - TODO: Implement
+class DHCP_CLIENT {
+    friend class DHCP_TESTER;
+private:
+    uint8_t H_ADDRESS[16];
+    DHCP_MESSAGE createDHCPMessage(uint8_t, uint32_t);
+    DHCP_MESSAGE createDHCPMessage(uint8_t, uint32_t, IPAddress);
+public:
+    DHCP_CLIENT();
+    DHCP_CLIENT(uint8_t [], uint8_t);
+    ~DHCP_CLIENT();
+};
+
 // DHCP Unit Tester
 class DHCP_TESTER {
 private:
