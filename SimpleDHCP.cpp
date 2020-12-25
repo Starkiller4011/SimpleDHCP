@@ -474,5 +474,6 @@ bool DHCP_TESTER::runTests() {
     _dhcp_server->printRawUDPPayload((uint8_t *)&test_message, sizeof((uint8_t *)&test_message));
     if (test_message.op != DHCP_BOOTREQUEST) return false;
     if (test_message.xid != 0) return false;
+    
     return true; // If we reached here then all the tests passed
 }
