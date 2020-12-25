@@ -53,10 +53,18 @@
 
 // DHCP HType Codes
 #define DHCP_ETHERNET                       1                       // DHCP Ethernet (10 Mb)
+#define DHCP_EXPERIMENTAL                   2                       // DHCP Experimental Ethernet (3Mb)
+#define DHCP_RADIO                          3                       // DHCP Amateur Radio AX.25
+#define DHCP_PROTEON                        4                       // DHCP Proteon ProNET Token Ring
+#define DHCP_CHAOS                          5                       // DHCP Chaos
 #define DHCP_IEEE_802                       6                       // DHCP IEEE 802 Network
 #define DHCP_ARCNET                         7                       // DHCP ARCNET
+#define DHCP_HYPERCHANNEL                   8                       // DHCP Hyperchannel
+#define DHCP_LANSTAR                        9                       // DHCP Lanstar
+#define DHCP_AUTO_SHORT                     10                      // DHCP Autonet Short Address
 #define DHCP_LOCAL_TALK                     11                      // DHCP LocalTalk
 #define DHCP_LOCAL_NET                      12                      // DHCP LocalNet
+#define DHCP_ULTRA_LINK                     13                      // DHCP Ultra Link
 #define DHCP_SMDS                           14                      // DHCP SMDS
 #define DHCP_FRAME_RELAY                    15                      // DHCP Frame Relay
 #define DHCP_ATM_A                          16                      // DHCP Asynchronous Transfer Mode(ATM)
@@ -64,6 +72,8 @@
 #define DHCP_FIBRE                          18                      // DHCP Fibre Channel
 #define DHCP_ATM_B                          19                      // DHCP Asynchronous Transfer Mode(ATM)
 #define DHCP_SERIAL                         20                      // DHCP Serial Line
+#define DHCP_ATM_C                          21                      // DHCP Asynchronous Transfer Mode(ATM)
+#define DHCP_MIL_STD_188_220                22                      // DHCP MIL-STD-188-220
 
 // DHCP HLen Codes
 #define DHCP_MAC_ADDRESS_LENGTH             6                       // DHCP Hardware Address length for networks using IEEE 802 MAC addresses
