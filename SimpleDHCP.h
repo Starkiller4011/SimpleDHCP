@@ -53,10 +53,18 @@
 
 // DHCP HType Codes
 #define DHCP_ETHERNET                       1                       // DHCP Ethernet (10 Mb)
+#define DHCP_EXPERIMENTAL                   2                       // DHCP Experimental Ethernet (3Mb)
+#define DHCP_RADIO                          3                       // DHCP Amateur Radio AX.25
+#define DHCP_PROTEON                        4                       // DHCP Proteon ProNET Token Ring
+#define DHCP_CHAOS                          5                       // DHCP Chaos
 #define DHCP_IEEE_802                       6                       // DHCP IEEE 802 Network
 #define DHCP_ARCNET                         7                       // DHCP ARCNET
+#define DHCP_HYPERCHANNEL                   8                       // DHCP Hyperchannel
+#define DHCP_LANSTAR                        9                       // DHCP Lanstar
+#define DHCP_AUTO_SHORT                     10                      // DHCP Autonet Short Address
 #define DHCP_LOCAL_TALK                     11                      // DHCP LocalTalk
 #define DHCP_LOCAL_NET                      12                      // DHCP LocalNet
+#define DHCP_ULTRA_LINK                     13                      // DHCP Ultra Link
 #define DHCP_SMDS                           14                      // DHCP SMDS
 #define DHCP_FRAME_RELAY                    15                      // DHCP Frame Relay
 #define DHCP_ATM_A                          16                      // DHCP Asynchronous Transfer Mode(ATM)
@@ -64,6 +72,8 @@
 #define DHCP_FIBRE                          18                      // DHCP Fibre Channel
 #define DHCP_ATM_B                          19                      // DHCP Asynchronous Transfer Mode(ATM)
 #define DHCP_SERIAL                         20                      // DHCP Serial Line
+#define DHCP_ATM_C                          21                      // DHCP Asynchronous Transfer Mode(ATM)
+#define DHCP_MIL_STD_188_220                22                      // DHCP MIL-STD-188-220
 
 // DHCP HLen Codes
 #define DHCP_MAC_ADDRESS_LENGTH             6                       // DHCP Hardware Address length for networks using IEEE 802 MAC addresses
@@ -215,7 +225,7 @@ class DHCP_SERVER {
     friend class DHCP_TESTER;
 private:
     // Members
-    bool _verbose;
+    bool _verbose;                                                  // DHCP Server
     EthernetUDP DHCP_SOCKET;                                        // DHCP Server UDP Socket
     IPAddress SERVER_ADDRESS;                                       // DHCP Server Network Address
     DHCP_ADDRESS_POOL address_pool;                                 // DHCP Server Address Pool
@@ -245,25 +255,52 @@ public:
 class DHCP_CLIENT {
     friend class DHCP_TESTER;
 private:
-    uint8_t H_ADDRESS[16];
-    DHCP_MESSAGE createDHCPMessage(uint8_t, uint32_t);
-    DHCP_MESSAGE createDHCPMessage(uint8_t, uint32_t, IPAddress);
+    uint8_t H_ADDRESS[16];                                          // DHCP Client
+    DHCP_MESSAGE createDHCPMessage(uint8_t, uint32_t);              // DHCP Client
+    DHCP_MESSAGE createDHCPMessage(uint8_t, uint32_t, IPAddress);   // DHCP Client
 public:
-    DHCP_CLIENT();
-    DHCP_CLIENT(uint8_t [], uint8_t);
-    ~DHCP_CLIENT();
+    DHCP_CLIENT();                                                  // DHCP Client
+    DHCP_CLIENT(uint8_t [], uint8_t);                               // DHCP Client
+    ~DHCP_CLIENT();                                                 // DHCP Client
 };
 
 // DHCP Unit Tester
 class DHCP_TESTER {
 private:
     // Members
-    DHCP_SERVER *_dhcp_server;
-    DHCP_CLIENT *_dhcp_client;
+    DHCP_SERVER *_dhcp_server;                                      // DHCP Tester
+    DHCP_CLIENT *_dhcp_client;                                      // DHCP Tester
+    IPAddress test_client_ip;                                       // DHCP Tester
+    IPAddress test_server_ip;                                       // DHCP Tester
+    uint32_t test_xid;                                              // DHCP Tester
+    bool testFailed();                                              // DHCP Tester
+    bool testPassed();                                              // DHCP Tester
+    bool runServerTests();                                          // DHCP Tester
+    bool runServerMessageGenerationTests();                         // DHCP Tester
+    bool testDHCPOFFERGeneration();                                 // DHCP Tester
+    bool testDHCPACKGeneration();                                   // DHCP Tester
+    bool testDHCPNAKGeneration();                                   // DHCP Tester
+    bool runServerParsingTests();                                   // DHCP Tester
+    bool testDHCPDISCOVERParsing();                                 // DHCP Tester
+    bool testDHCPINFORMParsing();                                   // DHCP Tester
+    bool testDHCPREQUESTParsing();                                  // DHCP Tester
+    bool testDHCPDECLINEParsing();                                  // DHCP Tester
+    bool testDHCPRELEASEParsing();                                  // DHCP Tester
+    bool runClientTests();                                          // DHCP Tester
+    bool runClientMessageGenerationTests();                         // DHCP Tester
+    bool testDHCPDISCOVERGeneration();                              // DHCP Tester
+    bool testDHCPINFORMGeneration();                                // DHCP Tester
+    bool testDHCPREQUESTGeneration();                               // DHCP Tester
+    bool testDHCPDECLINEGeneration();                               // DHCP Tester
+    bool testDHCPRELEASEGeneration();                               // DHCP Tester
+    bool runClientParsingTests();                                   // DHCP Tester
+    bool testDHCPOFFERParsing();                                    // DHCP Tester
+    bool testDHCPACKParsing();                                      // DHCP Tester
+    bool testDHCPNAKParsing();                                      // DHCP Tester
 public:
-    DHCP_TESTER();
-    ~DHCP_TESTER();
-    bool runTests();
+    DHCP_TESTER();                                                  // DHCP Tester
+    ~DHCP_TESTER();                                                 // DHCP Tester
+    bool runTests();                                                // DHCP Tester
 };
 
 #endif
