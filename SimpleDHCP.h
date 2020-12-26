@@ -1,6 +1,6 @@
 /* 
  * SimpleDHCP: Library for simple DHCP client and server functionality
- * Version: v0.0.6
+ * Version: v0.0.17
  * 
  * File: SimpleDHCP.h
  * Author: Derek M. Blue
