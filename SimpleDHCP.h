@@ -1,6 +1,6 @@
 /* 
  * SimpleDHCP: Library for simple DHCP client and server functionality
- * Version: v0.0.5
+ * Version: v0.0.6
  * 
  * File: SimpleDHCP.h
  * Author: Derek M. Blue
@@ -225,14 +225,16 @@ class DHCP_SERVER {
     friend class DHCP_TESTER;
 private:
     // Members
-    bool _verbose;                                                  // DHCP Server
+    bool _verbose;                                                  // DHCP Server verbosity
     EthernetUDP DHCP_SOCKET;                                        // DHCP Server UDP Socket
     IPAddress SERVER_ADDRESS;                                       // DHCP Server Network Address
     DHCP_ADDRESS_POOL address_pool;                                 // DHCP Server Address Pool
+    bool *_addresses;                                               // DHCP Server address tracker
     // Methods
     IPAddress getAddressFromPool();                                 // DHCP Server Get Network Address from pool
     bool isAddressAvailable(IPAddress);                             // DHCP Server check if network address is valid and available
     IPAddress assignAddress(IPAddress);                             // DHCP Server Assign Network Address
+    void releaseAddress(IPAddress);                                 // DHCP Server release assigned address
     void printDHCPMessage(DHCP_MESSAGE);                            // DHCP Server Print the raw DHCP message
     void printRawUDPPayload(uint8_t *, uint16_t);                   // DHCP Server Print the raw UDP payload
     DHCP_MESSAGE parseDHCPRequest(DHCP_MESSAGE);                    // DHCP Server Request Parser
@@ -276,6 +278,12 @@ private:
     bool testFailed();                                              // DHCP Tester
     bool testPassed();                                              // DHCP Tester
     bool runServerTests();                                          // DHCP Tester
+    bool runServerAddressManagementTests();                         // DHCP Tester
+    bool testAddressInRange();
+    bool testAddressOutOfRange();
+    bool testAutoAddressAssignment();
+    bool testAddressRelease();
+    bool testAddressReassignment();
     bool runServerMessageGenerationTests();                         // DHCP Tester
     bool testDHCPOFFERGeneration();                                 // DHCP Tester
     bool testDHCPACKGeneration();                                   // DHCP Tester
