@@ -19,17 +19,16 @@
 
 // DHCP_SERVER Default constructor, this constructor should be avoided
 DHCP_SERVER::DHCP_SERVER() {
-    if (_verbose) Serial.println("DHCP UDP Socket opened");
+    SERVER_ADDRESS = IPAddress(192,168,0,1);
+    assignAddressPool(IPAddress(192,168,0,1), 255);
+    _verbose = false;
     DHCP_SOCKET.begin(DHCP_SERVER_PORT);
 }
 
 // DHCP_SERVER Intended Constructor, sets the address pool and server IP
 DHCP_SERVER::DHCP_SERVER(IPAddress server_address, uint8_t range) {
     SERVER_ADDRESS = server_address;
-    address_pool.firstOctet = server_address[0];
-    address_pool.secondOctet = server_address[1];
-    address_pool.thirdOctet = server_address[2];
-    address_pool.range = range;
+    assignAddressPool(server_address, range);
     _verbose = false;
     DHCP_SOCKET.begin(DHCP_SERVER_PORT);
 }
@@ -37,13 +36,10 @@ DHCP_SERVER::DHCP_SERVER(IPAddress server_address, uint8_t range) {
 // DHCP_SERVER Intended Constructor, sets the address pool, server IP, and verbosity
 DHCP_SERVER::DHCP_SERVER(IPAddress server_address, uint8_t range, bool verbose) {
     SERVER_ADDRESS = server_address;
-    address_pool.firstOctet = server_address[0];
-    address_pool.secondOctet = server_address[1];
-    address_pool.thirdOctet = server_address[2];
-    address_pool.range = range;
+    assignAddressPool(server_address, range);
     _verbose = verbose;
     DHCP_SOCKET.begin(DHCP_SERVER_PORT);
-    if (_verbose) Serial.println("DHCP UDP Socket opened");
+    if (_verbose) Serial.println(F("DHCP UDP Socket opened"));
 }
 
 // DHCP Server Destructor
@@ -173,6 +169,7 @@ DHCP_MESSAGE DHCP_SERVER::createDHCPReply(uint8_t message_type, IPAddress client
     case DHCP_OFFER:
         break;
     case DHCP_ACK:
+    
         break;
     case DHCP_NAK:
         break;
@@ -187,7 +184,11 @@ void DHCP_SERVER::assignAddressPool(IPAddress server_address, uint8_t address_ra
     address_pool.firstOctet  = server_address[0];
     address_pool.secondOctet = server_address[1];
     address_pool.thirdOctet  = server_address[2];
-    address_pool.range = address_range;
+    if (address_range > 255) {
+        address_pool.range = 255;
+    } else {
+        address_pool.range = address_range;
+    }
 }
 
 // Assign network address from available addresses in the pool
@@ -206,7 +207,10 @@ IPAddress DHCP_SERVER::getAddressFromPool() {
 }
 
 // Check if a network address is in the pool and available
-bool DHCP_SERVER::isAddressAvailable(IPAddress) {
+bool DHCP_SERVER::isAddressAvailable(IPAddress address) {
+    if (address[0] != address_pool.firstOctet) return false;
+    if (address[1] != address_pool.secondOctet) return false;
+    if (address[2] != address_pool.thirdOctet) return false;
     return false;
 }
 
@@ -231,138 +235,138 @@ uint8_t DHCP_SERVER::checkForRequests() {
 
 // Print a DHCP Message
 void DHCP_SERVER::printDHCPMessage(DHCP_MESSAGE message) {
-    Serial.println("DHCP Message");
-    Serial.print("    op: ");
+    Serial.println(F("DHCP Message"));
+    Serial.print(F("    op: "));
     switch (message.op) {
     case DHCP_BOOTREQUEST:
-        Serial.print("BOOTREQUEST");
+        Serial.print(F("BOOTREQUEST"));
         break;
     case DHCP_BOOTREPLY:
-        Serial.print("BOOTREPLY");
+        Serial.print(F("BOOTREPLY"));
         break;
     default:
         break;
     }
     Serial.println();
-    Serial.print("    htype: ");
+    Serial.print(F("    htype: "));
     switch (message.htype) {
     case DHCP_ETHERNET:
-        Serial.print("Ethernet (10Mb)");
+        Serial.print(F("Ethernet (10Mb)"));
         break;
     case DHCP_IEEE_802:
-        Serial.print("IEEE 802 Network");
+        Serial.print(F("IEEE 802 Network"));
         break;
     case DHCP_ARCNET:
-        Serial.print("ARCNET");
+        Serial.print(F("ARCNET"));
         break;
     case DHCP_LOCAL_TALK:
-        Serial.print("LocalTalk");
+        Serial.print(F("LocalTalk"));
         break;
     case DHCP_LOCAL_NET:
-        Serial.print("LocalNet");
+        Serial.print(F("LocalNet"));
         break;
     case DHCP_SMDS:
-        Serial.print("SMDS");
+        Serial.print(F("SMDS"));
         break;
     case DHCP_FRAME_RELAY:
-        Serial.print("Frame Relay");
+        Serial.print(F("Frame Relay"));
         break;
     case DHCP_ATM_A:
-        Serial.print("Asynchronous Transfer Mode(ATM)");
+        Serial.print(F("Asynchronous Transfer Mode(ATM)"));
         break;
     case DHCP_HDLC:
-        Serial.print("HDLC");
+        Serial.print(F("HDLC"));
         break;
     case DHCP_FIBRE:
-        Serial.print("Fibre Channel");
+        Serial.print(F("Fibre Channel"));
         break;
     case DHCP_ATM_B:
-        Serial.print("Asynchronous Transfer Mode(ATM)");
+        Serial.print(F("Asynchronous Transfer Mode(ATM)"));
         break;
     case DHCP_SERIAL:
-        Serial.print("Serial Line");
+        Serial.print(F("Serial Line"));
         break;
     default:
         break;
     }
     Serial.println();
-    Serial.print("    hlen: ");
+    Serial.print(F("    hlen: "));
     Serial.print(message.hlen);
     Serial.println();
-    Serial.print("    hops: ");
+    Serial.print(F("    hops: "));
     Serial.print(message.hops);
     Serial.println();
-    Serial.print("    xid: ");
+    Serial.print(F("    xid: "));
     Serial.print(message.xid);
     Serial.println();
-    Serial.print("    secs: ");
+    Serial.print(F("    secs: "));
     Serial.print(message.secs);
-    Serial.print(" s");
+    Serial.print(F(" s"));
     Serial.println();
-    Serial.print("    flags: ");
-    Serial.print(message.flags);
+    Serial.print(F("    flags: "));
+    Serial.print(message.flags, HEX);
     Serial.println();
-    Serial.print("    ciaddr: ");
+    Serial.print(F("    ciaddr: "));
     for (int i = 0; i < 4; i++) {
-        if (i > 0) Serial.print(".");
+        if (i > 0) Serial.print(F("."));
         Serial.print(message.ciaddr[i]);
     }
     Serial.println();
-    Serial.print("    yiaddr: ");
+    Serial.print(F("    yiaddr: "));
     for (int i = 0; i < 4; i++) {
-        if (i > 0) Serial.print(".");
+        if (i > 0) Serial.print(F("."));
         Serial.print(message.yiaddr[i]);
     }
     Serial.println();
-    Serial.print("    siaddr: ");
+    Serial.print(F("    siaddr: "));
     for (int i = 0; i < 4; i++) {
-        if (i > 0) Serial.print(".");
+        if (i > 0) Serial.print(F("."));
         Serial.print(message.siaddr[i]);
     }
     Serial.println();
-    Serial.print("    giaddr: ");
+    Serial.print(F("    giaddr: "));
     for (int i = 0; i < 4; i++) {
-        if (i > 0) Serial.print(".");
+        if (i > 0) Serial.print(F("."));
         Serial.print(message.giaddr[i]);
     }
     Serial.println();
-    Serial.print("    chaddr: ");
+    Serial.print(F("    chaddr: "));
     for (int i = 0; i < message.hlen; i++) {
-        if (i > 0) Serial.print(":");
-        if (message.chaddr[i] < 16) Serial.print("0");
+        if (i > 0) Serial.print(F(":"));
+        if (message.chaddr[i] < 16) Serial.print(F("0"));
         Serial.print(message.chaddr[i], HEX);
     }
     Serial.println();
-    Serial.print("    sname: ");
+    Serial.print(F("    sname: "));
     for (int i = 0; i < 64; i++) {
         Serial.print(message.sname[i]);
     }
     Serial.println();
-    Serial.print("    bootf: ");
+    Serial.print(F("    bootf: "));
     for (int i = 0; i < 128; i++) {
         Serial.print(message.bootf[i]);
     }
     Serial.println();
-    Serial.print("    magic: ");
+    Serial.print(F("    magic: "));
     for (int i = 0; i < 4; i++) {
         Serial.print(message.magic[i]);
     }
     Serial.println();
-    Serial.println("    options: ");
-    Serial.println("        Type  Len  Data");
+    Serial.println(F("    options: "));
+    Serial.println(F("        Type  Len  Data"));
     for (int i = 0; i < DHCP_DEFAULT_OPTIONS_SIZE; i++) {
-        Serial.print("        ");
+        Serial.print(F("        "));
         Serial.print(message.options[i]);
         if (message.options[i] == DHCP_END) {
             i = DHCP_DEFAULT_OPTIONS_SIZE;
             break;
         }
-        if (message.options[i] < 10) Serial.print(" ");
-        Serial.print("    ");
+        if (message.options[i] < 10) Serial.print(F(" "));
+        Serial.print(F("    "));
         i++;
         Serial.print(message.options[i]);
-        if (message.options[i+1] < 10) Serial.print(" ");
-        Serial.print("   ");
+        if (message.options[i+1] < 10) Serial.print(F(" "));
+        Serial.print(F("   "));
         for (int j = 1; j <= message.options[i]; j++) {
             Serial.print(message.options[i+j]);
         }
@@ -374,20 +378,20 @@ void DHCP_SERVER::printDHCPMessage(DHCP_MESSAGE message) {
 
 // Print a raw UDP packet
 void DHCP_SERVER::printRawUDPPayload(uint8_t *packet_buffer, uint16_t packet_size) {
-    Serial.println("Raw DHCP UDP Payload");
+    Serial.println(F("Raw DHCP UDP Payload"));
     Serial.println();
     int i = 0, row = 0;
     while (i < packet_size) {
-        if (row < 1) Serial.print("0");
-        if (row < 16) Serial.print("0");
-        if (row < 256) Serial.print("0");
+        if (row < 1) Serial.print(F("0"));
+        if (row < 16) Serial.print(F("0"));
+        if (row < 256) Serial.print(F("0"));
         Serial.print((row*16), HEX);
-        Serial.print("  ");
+        Serial.print(F("  "));
         if ((packet_size - i) > 16) {
             for (int j = 0; j < 16; j++) {
-                if (j == 8) Serial.print(" ");
-                if (j > 0) Serial.print(" ");
-                if (packet_buffer[i+j] < 16) Serial.print("0");
+                if (j == 8) Serial.print(F(" "));
+                if (j > 0) Serial.print(F(" "));
+                if (packet_buffer[i+j] < 16) Serial.print(F("0"));
                 Serial.print(packet_buffer[i+j], HEX);
             }
             Serial.println();
@@ -395,9 +399,9 @@ void DHCP_SERVER::printRawUDPPayload(uint8_t *packet_buffer, uint16_t packet_siz
         } else {
             int r = (packet_size - i);
             for (int j = 0; j < r; j++) {
-                if (j == 8) Serial.print(" ");
-                if (j > 0) Serial.print(" ");
-                if (packet_buffer[i+j] < 16) Serial.print("0");
+                if (j == 8) Serial.print(F(" "));
+                if (j > 0) Serial.print(F(" "));
+                if (packet_buffer[i+j] < 16) Serial.print(F("0"));
                 Serial.print(packet_buffer[i+j], HEX);
             }
             Serial.println();
@@ -409,7 +413,7 @@ void DHCP_SERVER::printRawUDPPayload(uint8_t *packet_buffer, uint16_t packet_siz
 }
 
 // ********** DHCP CLIENT **********
-// TODO: Implement this class
+// TODO: Fully Implement this class
 
 DHCP_CLIENT::DHCP_CLIENT(uint8_t chaddr[], uint8_t hlen) {
     for (int i = 0; i < 16; i++) {
@@ -449,30 +453,223 @@ DHCP_MESSAGE DHCP_CLIENT::createDHCPMessage(uint8_t message_type, uint32_t xid) 
     return message;
 }
 
-// ********** DHCP SERVER TESTER **********
+// ********** DHCP UNIT TESTER **********
+// TODO: Fully Implement this class
 
 DHCP_TESTER::DHCP_TESTER() {
+    randomSeed(1111);
+    test_xid = (uint32_t)random(2147483647);
+    test_server_ip = IPAddress(10,0,0,1);
+    test_client_ip = IPAddress(10,0,0,2);
     uint8_t test_client_mac[] = {0x01, 0xEA, 0xFD, 0xBC, 0x05, 0x06};
     _dhcp_server = new DHCP_SERVER(IPAddress(10, 0, 0, 1), 32);
     _dhcp_client = new DHCP_CLIENT(test_client_mac, 6);
 }
 
 DHCP_TESTER::~DHCP_TESTER() {
-    Serial.println("Destroying DHCP Tester");
+    Serial.println(F("Destroying DHCP Tester"));
     delete _dhcp_server;
     delete _dhcp_client;
 }
 
+// Handle failed tests
+bool DHCP_TESTER::testFailed() {
+    Serial.print(F("[ FAIL ]"));
+    Serial.println();
+    return false;
+}
+
+// Handle successful tests
+bool DHCP_TESTER::testPassed() {
+    Serial.print(F("[  OK  ]"));
+    Serial.println();
+    return true;
+}
+
+// Run SimpleDHCP tests
 bool DHCP_TESTER::runTests() {
-    Serial.println("Running DHCP tests");
-    Serial.println();
-    Serial.println("**************************************************");
-    Serial.println("  - Test 1: DHCP Client Discovery");
-    Serial.println();
-    DHCP_MESSAGE test_message = _dhcp_client->createDHCPMessage(DHCP_DISCOVER, 0);
-    _dhcp_server->printDHCPMessage(test_message);
-    _dhcp_server->printRawUDPPayload((uint8_t *)&test_message, sizeof((uint8_t *)&test_message));
-    if (test_message.op != DHCP_BOOTREQUEST) return false;
-    if (test_message.xid != 0) return false;
-    return true; // If we reached here then all the tests passed
+    Serial.println(F("************ Running tests ************"));
+    bool results = true;
+    if (!runServerTests()) results = false;
+    if (!runClientTests()) results = false;
+    Serial.println(F("************ Test Results *************"));
+    Serial.print(F("Final result:    "));
+    if (results) {
+        return testPassed();
+    } else {
+        return testFailed();
+    }
+}
+
+// Run DHCP Server tests
+bool DHCP_TESTER::runServerTests() {
+    Serial.println(F("********** DHCP Server Tests **********"));
+    bool results = true;
+    if (!runServerMessageGenerationTests()) results = false;
+    if (!runServerParsingTests()) results = false;
+    return results;
+}
+
+// Run Server message generation tests
+bool DHCP_TESTER::runServerMessageGenerationTests() {
+    Serial.println(F("    Server Message Generation Tests    "));
+    bool results = true;
+    if (!testDHCPOFFERGeneration()) results = false;
+    if (!testDHCPACKGeneration()) results = false;
+    if (!testDHCPNAKGeneration()) results = false;
+    return results;
+}
+
+// Run Server DHCP OFFER generation test
+bool DHCP_TESTER::testDHCPOFFERGeneration() {
+    Serial.print(F("DHCP OFFER:      "));
+    DHCP_MESSAGE message = _dhcp_server->createDHCPReply(DHCP_OFFER, test_client_ip, test_xid);
+    // _dhcp_server->printDHCPMessage(message);
+    if (message.op != DHCP_BOOTREPLY) return testFailed();
+    if (message.htype != DHCP_ETHERNET) return testFailed();
+    if (message.hlen != 6) return testFailed();
+    if (message.hops != 0) return testFailed();
+    if (message.xid != test_xid) return testFailed();
+    if (message.secs != 0) return testFailed();
+    if (message.flags != DHCP_BROADCAST_FLAG) return testFailed();
+    for (int i = 0; i < 4; i++) {
+        if (message.ciaddr[i] != 0) return testFailed();
+        if (message.yiaddr[i] != test_client_ip[i]) return testFailed();
+        if (message.siaddr[i] != test_server_ip[i]) return testFailed();
+        if (message.giaddr[i] != 0) return testFailed();
+    }
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server DHCP ACK generation test
+bool DHCP_TESTER::testDHCPACKGeneration() {
+    Serial.print(F("DHCP ACK:        "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server DHCP NAK generation test
+bool DHCP_TESTER::testDHCPNAKGeneration() {
+    Serial.print(F("DHCP NAK:        "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server parsing tests
+bool DHCP_TESTER::runServerParsingTests() {
+    Serial.println(F("     Server Message Parsing Tests      "));
+    bool results = true;
+    if (!testDHCPDISCOVERParsing()) results = false;
+    if (!testDHCPINFORMParsing()) results = false;
+    if (!testDHCPREQUESTParsing()) results = false;
+    if (!testDHCPDECLINEParsing()) results = false;
+    if (!testDHCPRELEASEParsing()) results = false;
+    return results;
+}
+
+// Run Server DHCP DISCOVER parsing test
+bool DHCP_TESTER::testDHCPDISCOVERParsing() {
+    Serial.print(F("DHCP DISCOVER:   "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server DHCP INFORM parsing test
+bool DHCP_TESTER::testDHCPINFORMParsing() {
+    Serial.print(F("DHCP INFORM:     "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server DHCP REQUEST parsing test
+bool DHCP_TESTER::testDHCPREQUESTParsing() {
+    Serial.print(F("DHCP REQUEST:    "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server DHCP DECLINE parsing test
+bool DHCP_TESTER::testDHCPDECLINEParsing() {
+    Serial.print(F("DHCP DECLINE:    "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server DHCP RELEASE parsing test
+bool DHCP_TESTER::testDHCPRELEASEParsing() {
+    Serial.print(F("DHCP RELEASE:    "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client tests
+bool DHCP_TESTER::runClientTests() {
+    Serial.println(F("********** DHCP Client Tests **********"));
+    bool results = true;
+    if (!runClientMessageGenerationTests()) results = false;
+    if (!runClientParsingTests()) results = false;
+    return results;
+}
+
+// Run Client message generation tests
+bool DHCP_TESTER::runClientMessageGenerationTests() {
+    Serial.println(F("    Client Message Generation Tests    "));
+    bool results = true;
+    if (!testDHCPDISCOVERGeneration()) results = false;
+    if (!testDHCPINFORMGeneration()) results = false;
+    if (!testDHCPREQUESTGeneration()) results = false;
+    if (!testDHCPDECLINEGeneration()) results = false;
+    if (!testDHCPRELEASEGeneration()) results = false;
+    return results;
+}
+
+// Run Client DHCP DISCOVER generation test
+bool DHCP_TESTER::testDHCPDISCOVERGeneration() {
+    Serial.print(F("DHCP DISCOVER:   "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client DHCP INFORM generation test
+bool DHCP_TESTER::testDHCPINFORMGeneration() {
+    Serial.print(F("DHCP INFORM:     "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client DHCP REQUEST generation test
+bool DHCP_TESTER::testDHCPREQUESTGeneration() {
+    Serial.print(F("DHCP REQUEST:    "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client DHCP DECLINE generation test
+bool DHCP_TESTER::testDHCPDECLINEGeneration() {
+    Serial.print(F("DHCP DECLINE:    "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client DHCP RELEASE generation test
+bool DHCP_TESTER::testDHCPRELEASEGeneration() {
+    Serial.print(F("DHCP RELEASE:    "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client parsing tests
+bool DHCP_TESTER::runClientParsingTests() {
+    Serial.println(F("     Client Message Parsing Tests      "));
+    bool results = true;
+    if (!testDHCPOFFERParsing()) results = false;
+    if (!testDHCPACKParsing()) results = false;
+    if (!testDHCPNAKParsing()) results = false;
+    return results;
+}
+
+// Run Client DHCP OFFER parsing test
+bool DHCP_TESTER::testDHCPOFFERParsing() {
+    Serial.print(F("DHCP OFFER:      "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client DHCP ACK parsing test
+bool DHCP_TESTER::testDHCPACKParsing() {
+    Serial.print(F("DHCP ACK:        "));
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client DHCP NAK parsing test
+bool DHCP_TESTER::testDHCPNAKParsing() {
+    Serial.print(F("DHCP NAK:        "));
+    return testPassed(); // If we reached here then all the tests passed
 }
