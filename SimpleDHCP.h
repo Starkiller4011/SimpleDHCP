@@ -234,6 +234,7 @@ private:
     IPAddress getAddressFromPool();                                 // DHCP Server Get Network Address from pool
     bool isAddressAvailable(IPAddress);                             // DHCP Server check if network address is valid and available
     IPAddress assignAddress(IPAddress);                             // DHCP Server Assign Network Address
+    void releaseAddress(IPAddress);                                 // DHCP Server release assigned address
     void printDHCPMessage(DHCP_MESSAGE);                            // DHCP Server Print the raw DHCP message
     void printRawUDPPayload(uint8_t *, uint16_t);                   // DHCP Server Print the raw UDP payload
     DHCP_MESSAGE parseDHCPRequest(DHCP_MESSAGE);                    // DHCP Server Request Parser
