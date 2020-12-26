@@ -1,6 +1,6 @@
 /* 
  * SimpleDHCP: Library for simple DHCP client and server functionality
- * Version: v0.0.5
+ * Version: v0.0.6
  * 
  * File: SimpleDHCP.h
  * Author: Derek M. Blue
@@ -44,6 +44,59 @@ DHCP_SERVER::DHCP_SERVER(IPAddress server_address, uint8_t range, bool verbose) 
 
 // DHCP Server Destructor
 DHCP_SERVER::~DHCP_SERVER() {
+}
+
+// Set the DHCP Address Pool
+void DHCP_SERVER::assignAddressPool(IPAddress server_address, uint8_t address_range) {
+    address_pool.firstOctet  = server_address[0];
+    address_pool.secondOctet = server_address[1];
+    address_pool.thirdOctet  = server_address[2];
+    if (address_range > 255) {
+        address_pool.range = 255;
+    } else {
+        address_pool.range = address_range;
+    }
+    _addresses = new bool[address_pool.range];
+    for (int i = 0; i < address_pool.range; i++) {
+        _addresses[i] = true;
+    }
+}
+
+// Assign network address from available addresses in the pool
+IPAddress DHCP_SERVER::assignAddress(IPAddress requested_ip) {
+    if (isAddressAvailable(requested_ip)) {
+        _addresses[requested_ip[3] + 2] = false;
+        return requested_ip;
+    } else {
+        return getAddressFromPool();
+    }
+}
+
+// Get a valid network address from the address pool
+IPAddress DHCP_SERVER::getAddressFromPool() {
+    uint8_t fourthOctet;
+    for (int i = 0; i < address_pool.range; i++) {
+        if (_addresses[i]) {
+            fourthOctet = i + 2;
+            break;
+        }
+    }
+    IPAddress address(address_pool.firstOctet, address_pool.secondOctet, address_pool.thirdOctet, fourthOctet);
+    if (isAddressAvailable(address)) {
+        _addresses[address[3] + 2] = false;
+        return address
+    } else {
+        return IPAddress(0, 0, 0, 0);
+    }
+}
+
+// Check if a network address is in the pool and available
+bool DHCP_SERVER::isAddressAvailable(IPAddress address) {
+    if (address[0] != address_pool.firstOctet) return false;
+    if (address[1] != address_pool.secondOctet) return false;
+    if (address[2] != address_pool.thirdOctet) return false;
+    if (address[3] > address_pool.range) return false;
+    return _addresses[address[3] - 2];
 }
 
 // Parse DHCP Messages: If received from client then will allocate an address as required
@@ -177,41 +230,6 @@ DHCP_MESSAGE DHCP_SERVER::createDHCPReply(uint8_t message_type, IPAddress client
         break;
     }
     return reply;
-}
-
-// Set the DHCP Address Pool
-void DHCP_SERVER::assignAddressPool(IPAddress server_address, uint8_t address_range) {
-    address_pool.firstOctet  = server_address[0];
-    address_pool.secondOctet = server_address[1];
-    address_pool.thirdOctet  = server_address[2];
-    if (address_range > 255) {
-        address_pool.range = 255;
-    } else {
-        address_pool.range = address_range;
-    }
-}
-
-// Assign network address from available addresses in the pool
-IPAddress DHCP_SERVER::assignAddress(IPAddress requested_ip) {
-    if (isAddressAvailable(requested_ip)) {
-        return requested_ip;
-    } else {
-        return getAddressFromPool();
-    }
-}
-
-// Get a valid network address from the address pool
-IPAddress DHCP_SERVER::getAddressFromPool() {
-    IPAddress address;
-    return address;
-}
-
-// Check if a network address is in the pool and available
-bool DHCP_SERVER::isAddressAvailable(IPAddress address) {
-    if (address[0] != address_pool.firstOctet) return false;
-    if (address[1] != address_pool.secondOctet) return false;
-    if (address[2] != address_pool.thirdOctet) return false;
-    return false;
 }
 
 // DHCP Server Check for Requests
@@ -464,6 +482,9 @@ DHCP_TESTER::DHCP_TESTER() {
     uint8_t test_client_mac[] = {0x01, 0xEA, 0xFD, 0xBC, 0x05, 0x06};
     _dhcp_server = new DHCP_SERVER(IPAddress(10, 0, 0, 1), 32);
     _dhcp_client = new DHCP_CLIENT(test_client_mac, 6);
+    Serial.println();
+    _dhcp_server->getAddressFromPool();
+    Serial.println();
 }
 
 DHCP_TESTER::~DHCP_TESTER() {
@@ -508,6 +529,38 @@ bool DHCP_TESTER::runServerTests() {
     if (!runServerMessageGenerationTests()) results = false;
     if (!runServerParsingTests()) results = false;
     return results;
+}
+
+// Run Server address management tests
+bool DHCP_TESTER::runServerAddressManagementTests() {
+    Serial.println(F("       Address Management Tests        "));
+    bool results = true;
+    if (!testAddressInRange()) results = false;
+    if (!testAddressOutOfRange()) results = false;
+    if (!testAutoAddressAssignment()) results = false;
+    if (!testAddressRelease()) results = false;
+    if (!testAddressReassignment()) results = false;
+    return results;
+}
+
+//
+bool DHCP_TESTER::testAddressInRange() {
+}
+
+//
+bool DHCP_TESTER::testAddressOutOfRange() {
+}
+
+//
+bool DHCP_TESTER::testAutoAddressAssignment() {
+}
+
+//
+bool DHCP_TESTER::testAddressRelease() {
+}
+
+//
+bool DHCP_TESTER::testAddressReassignment() {
 }
 
 // Run Server message generation tests
