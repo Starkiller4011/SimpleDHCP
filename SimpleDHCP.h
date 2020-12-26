@@ -225,7 +225,7 @@ class DHCP_SERVER {
     friend class DHCP_TESTER;
 private:
     // Members
-    bool _verbose;
+    bool _verbose;                                                  // DHCP Server
     EthernetUDP DHCP_SOCKET;                                        // DHCP Server UDP Socket
     IPAddress SERVER_ADDRESS;                                       // DHCP Server Network Address
     DHCP_ADDRESS_POOL address_pool;                                 // DHCP Server Address Pool
@@ -255,25 +255,52 @@ public:
 class DHCP_CLIENT {
     friend class DHCP_TESTER;
 private:
-    uint8_t H_ADDRESS[16];
-    DHCP_MESSAGE createDHCPMessage(uint8_t, uint32_t);
-    DHCP_MESSAGE createDHCPMessage(uint8_t, uint32_t, IPAddress);
+    uint8_t H_ADDRESS[16];                                          // DHCP Client
+    DHCP_MESSAGE createDHCPMessage(uint8_t, uint32_t);              // DHCP Client
+    DHCP_MESSAGE createDHCPMessage(uint8_t, uint32_t, IPAddress);   // DHCP Client
 public:
-    DHCP_CLIENT();
-    DHCP_CLIENT(uint8_t [], uint8_t);
-    ~DHCP_CLIENT();
+    DHCP_CLIENT();                                                  // DHCP Client
+    DHCP_CLIENT(uint8_t [], uint8_t);                               // DHCP Client
+    ~DHCP_CLIENT();                                                 // DHCP Client
 };
 
 // DHCP Unit Tester
 class DHCP_TESTER {
 private:
     // Members
-    DHCP_SERVER *_dhcp_server;
-    DHCP_CLIENT *_dhcp_client;
+    DHCP_SERVER *_dhcp_server;                                      // DHCP Tester
+    DHCP_CLIENT *_dhcp_client;                                      // DHCP Tester
+    IPAddress test_client_ip;                                       // DHCP Tester
+    IPAddress test_server_ip;                                       // DHCP Tester
+    uint32_t test_xid;                                              // DHCP Tester
+    bool testFailed();                                              // DHCP Tester
+    bool testPassed();                                              // DHCP Tester
+    bool runServerTests();                                          // DHCP Tester
+    bool runServerMessageGenerationTests();                         // DHCP Tester
+    bool testDHCPOFFERGeneration();                                 // DHCP Tester
+    bool testDHCPACKGeneration();                                   // DHCP Tester
+    bool testDHCPNAKGeneration();                                   // DHCP Tester
+    bool runServerParsingTests();                                   // DHCP Tester
+    bool testDHCPDISCOVERParsing();                                 // DHCP Tester
+    bool testDHCPINFORMParsing();                                   // DHCP Tester
+    bool testDHCPREQUESTParsing();                                  // DHCP Tester
+    bool testDHCPDECLINEParsing();                                  // DHCP Tester
+    bool testDHCPRELEASEParsing();                                  // DHCP Tester
+    bool runClientTests();                                          // DHCP Tester
+    bool runClientMessageGenerationTests();                         // DHCP Tester
+    bool testDHCPDISCOVERGeneration();                              // DHCP Tester
+    bool testDHCPINFORMGeneration();                                // DHCP Tester
+    bool testDHCPREQUESTGeneration();                               // DHCP Tester
+    bool testDHCPDECLINEGeneration();                               // DHCP Tester
+    bool testDHCPRELEASEGeneration();                               // DHCP Tester
+    bool runClientParsingTests();                                   // DHCP Tester
+    bool testDHCPOFFERParsing();                                    // DHCP Tester
+    bool testDHCPACKParsing();                                      // DHCP Tester
+    bool testDHCPNAKParsing();                                      // DHCP Tester
 public:
-    DHCP_TESTER();
-    ~DHCP_TESTER();
-    bool runTests();
+    DHCP_TESTER();                                                  // DHCP Tester
+    ~DHCP_TESTER();                                                 // DHCP Tester
+    bool runTests();                                                // DHCP Tester
 };
 
 #endif

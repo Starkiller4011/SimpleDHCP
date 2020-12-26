@@ -19,17 +19,16 @@
 
 // DHCP_SERVER Default constructor, this constructor should be avoided
 DHCP_SERVER::DHCP_SERVER() {
-    if (_verbose) Serial.println("DHCP UDP Socket opened");
+    SERVER_ADDRESS = IPAddress(192,168,0,1);
+    assignAddressPool(IPAddress(192,168,0,1), 255);
+    _verbose = false;
     DHCP_SOCKET.begin(DHCP_SERVER_PORT);
 }
 
 // DHCP_SERVER Intended Constructor, sets the address pool and server IP
 DHCP_SERVER::DHCP_SERVER(IPAddress server_address, uint8_t range) {
     SERVER_ADDRESS = server_address;
-    address_pool.firstOctet = server_address[0];
-    address_pool.secondOctet = server_address[1];
-    address_pool.thirdOctet = server_address[2];
-    address_pool.range = range;
+    assignAddressPool(server_address, range);
     _verbose = false;
     DHCP_SOCKET.begin(DHCP_SERVER_PORT);
 }
@@ -37,10 +36,7 @@ DHCP_SERVER::DHCP_SERVER(IPAddress server_address, uint8_t range) {
 // DHCP_SERVER Intended Constructor, sets the address pool, server IP, and verbosity
 DHCP_SERVER::DHCP_SERVER(IPAddress server_address, uint8_t range, bool verbose) {
     SERVER_ADDRESS = server_address;
-    address_pool.firstOctet = server_address[0];
-    address_pool.secondOctet = server_address[1];
-    address_pool.thirdOctet = server_address[2];
-    address_pool.range = range;
+    assignAddressPool(server_address, range);
     _verbose = verbose;
     DHCP_SOCKET.begin(DHCP_SERVER_PORT);
     if (_verbose) Serial.println("DHCP UDP Socket opened");
@@ -187,7 +183,11 @@ void DHCP_SERVER::assignAddressPool(IPAddress server_address, uint8_t address_ra
     address_pool.firstOctet  = server_address[0];
     address_pool.secondOctet = server_address[1];
     address_pool.thirdOctet  = server_address[2];
-    address_pool.range = address_range;
+    if (address_range > 255) {
+        address_pool.range = 255;
+    } else {
+        address_pool.range = address_range;
+    }
 }
 
 // Assign network address from available addresses in the pool
@@ -206,7 +206,10 @@ IPAddress DHCP_SERVER::getAddressFromPool() {
 }
 
 // Check if a network address is in the pool and available
-bool DHCP_SERVER::isAddressAvailable(IPAddress) {
+bool DHCP_SERVER::isAddressAvailable(IPAddress address) {
+    if (address[0] != address_pool.firstOctet) return false;
+    if (address[1] != address_pool.secondOctet) return false;
+    if (address[2] != address_pool.thirdOctet) return false;
     return false;
 }
 
@@ -300,7 +303,7 @@ void DHCP_SERVER::printDHCPMessage(DHCP_MESSAGE message) {
     Serial.print(" s");
     Serial.println();
     Serial.print("    flags: ");
-    Serial.print(message.flags);
+    Serial.print(message.flags, HEX);
     Serial.println();
     Serial.print("    ciaddr: ");
     for (int i = 0; i < 4; i++) {
@@ -409,7 +412,7 @@ void DHCP_SERVER::printRawUDPPayload(uint8_t *packet_buffer, uint16_t packet_siz
 }
 
 // ********** DHCP CLIENT **********
-// TODO: Implement this class
+// TODO: Fully Implement this class
 
 DHCP_CLIENT::DHCP_CLIENT(uint8_t chaddr[], uint8_t hlen) {
     for (int i = 0; i < 16; i++) {
@@ -449,9 +452,14 @@ DHCP_MESSAGE DHCP_CLIENT::createDHCPMessage(uint8_t message_type, uint32_t xid) 
     return message;
 }
 
-// ********** DHCP SERVER TESTER **********
+// ********** DHCP UNIT TESTER **********
+// TODO: Fully Implement this class
 
 DHCP_TESTER::DHCP_TESTER() {
+    randomSeed(1111);
+    test_xid = (uint32_t)random(2147483647);
+    test_server_ip = IPAddress(10,0,0,1);
+    test_client_ip = IPAddress(10,0,0,2);
     uint8_t test_client_mac[] = {0x01, 0xEA, 0xFD, 0xBC, 0x05, 0x06};
     _dhcp_server = new DHCP_SERVER(IPAddress(10, 0, 0, 1), 32);
     _dhcp_client = new DHCP_CLIENT(test_client_mac, 6);
@@ -463,17 +471,200 @@ DHCP_TESTER::~DHCP_TESTER() {
     delete _dhcp_client;
 }
 
+// Handle failed tests
+bool DHCP_TESTER::testFailed() {
+    Serial.print("[ FAIL ]");
+    Serial.println();
+    return false;
+}
+
+// Handle successful tests
+bool DHCP_TESTER::testPassed() {
+    Serial.print("[  OK  ]");
+    Serial.println();
+    return true;
+}
+
+// Run SimpleDHCP tests
 bool DHCP_TESTER::runTests() {
-    Serial.println("Running DHCP tests");
-    Serial.println();
-    Serial.println("**************************************************");
-    Serial.println("  - Test 1: DHCP Client Discovery");
-    Serial.println();
-    DHCP_MESSAGE test_message = _dhcp_client->createDHCPMessage(DHCP_DISCOVER, 0);
-    _dhcp_server->printDHCPMessage(test_message);
-    _dhcp_server->printRawUDPPayload((uint8_t *)&test_message, sizeof((uint8_t *)&test_message));
-    if (test_message.op != DHCP_BOOTREQUEST) return false;
-    if (test_message.xid != 0) return false;
-    
+    Serial.println("************ Running tests ************");
+    bool results = true;
+    if (!runServerTests()) results = false;
+    if (!runClientTests()) results = false;
+    Serial.println("************ Test Results *************");
+    Serial.print("Final result:    ");
+    if (results) {
+        return testPassed();
+    } else {
+        return testFailed();
+    }
+}
+
+// Run DHCP Server tests
+bool DHCP_TESTER::runServerTests() {
+    Serial.println("********** DHCP Server Tests **********");
+    bool results = true;
+    if (!runServerMessageGenerationTests()) results = false;
+    if (!runServerParsingTests()) results = false;
+    return results;
+}
+
+// Run Server message generation tests
+bool DHCP_TESTER::runServerMessageGenerationTests() {
+    Serial.println("    Server Message Generation Tests    ");
+    bool results = true;
+    if (!testDHCPOFFERGeneration()) results = false;
+    if (!testDHCPACKGeneration()) results = false;
+    if (!testDHCPNAKGeneration()) results = false;
+    return results;
+}
+
+// Run Server DHCP OFFER generation test
+bool DHCP_TESTER::testDHCPOFFERGeneration() {
+    Serial.print("DHCP OFFER:      ");
+    DHCP_MESSAGE message = _dhcp_server->createDHCPReply(DHCP_OFFER, test_client_ip, test_xid);
+    // _dhcp_server->printDHCPMessage(message);
+    if (message.op != DHCP_BOOTREPLY) return testFailed();
+    if (message.htype != DHCP_ETHERNET) return testFailed();
+    if (message.hlen != 6) return testFailed();
+    if (message.hops != 0) return testFailed();
+    if (message.xid != test_xid) return testFailed();
+    if (message.secs != 0) return testFailed();
+    if (message.flags != DHCP_BROADCAST_FLAG) return testFailed();
+    for (int i = 0; i < 4; i++) {
+        if (message.ciaddr[i] != 0) return testFailed();
+        if (message.yiaddr[i] != test_client_ip[i]) return testFailed();
+        if (message.siaddr[i] != test_server_ip[i]) return testFailed();
+        if (message.giaddr[i] != 0) return testFailed();
+    }
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server DHCP ACK generation test
+bool DHCP_TESTER::testDHCPACKGeneration() {
+    Serial.print("DHCP ACK:        ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server DHCP NAK generation test
+bool DHCP_TESTER::testDHCPNAKGeneration() {
+    Serial.print("DHCP NAK:        ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server parsing tests
+bool DHCP_TESTER::runServerParsingTests() {
+    Serial.println("     Server Message Parsing Tests      ");
+    if (!testDHCPDISCOVERParsing()) return false;
+    if (!testDHCPINFORMParsing()) return false;
+    if (!testDHCPREQUESTParsing()) return false;
+    if (!testDHCPDECLINEParsing()) return false;
+    if (!testDHCPRELEASEParsing()) return false;
     return true; // If we reached here then all the tests passed
+}
+
+// Run Server DHCP DISCOVER parsing test
+bool DHCP_TESTER::testDHCPDISCOVERParsing() {
+    Serial.print("DHCP DISCOVER:   ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server DHCP INFORM parsing test
+bool DHCP_TESTER::testDHCPINFORMParsing() {
+    Serial.print("DHCP INFORM:     ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server DHCP REQUEST parsing test
+bool DHCP_TESTER::testDHCPREQUESTParsing() {
+    Serial.print("DHCP REQUEST:    ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server DHCP DECLINE parsing test
+bool DHCP_TESTER::testDHCPDECLINEParsing() {
+    Serial.print("DHCP DECLINE:    ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Server DHCP RELEASE parsing test
+bool DHCP_TESTER::testDHCPRELEASEParsing() {
+    Serial.print("DHCP RELEASE:    ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client tests
+bool DHCP_TESTER::runClientTests() {
+    Serial.println("********** DHCP Client Tests **********");
+    if (!runClientMessageGenerationTests()) return false;
+    if (!runClientParsingTests()) return false;
+    return true; // If we reached here then all the tests passed
+}
+
+// Run Client message generation tests
+bool DHCP_TESTER::runClientMessageGenerationTests() {
+    Serial.println("    Client Message Generation Tests    ");
+    if (!testDHCPDISCOVERGeneration()) return false;
+    if (!testDHCPINFORMGeneration()) return false;
+    if (!testDHCPREQUESTGeneration()) return false;
+    if (!testDHCPDECLINEGeneration()) return false;
+    if (!testDHCPRELEASEGeneration()) return false;
+    return true; // If we reached here then all the tests passed
+}
+
+// Run Client DHCP DISCOVER generation test
+bool DHCP_TESTER::testDHCPDISCOVERGeneration() {
+    Serial.print("DHCP DISCOVER:   ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client DHCP INFORM generation test
+bool DHCP_TESTER::testDHCPINFORMGeneration() {
+    Serial.print("DHCP INFORM:     ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client DHCP REQUEST generation test
+bool DHCP_TESTER::testDHCPREQUESTGeneration() {
+    Serial.print("DHCP REQUEST:    ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client DHCP DECLINE generation test
+bool DHCP_TESTER::testDHCPDECLINEGeneration() {
+    Serial.print("DHCP DECLINE:    ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client DHCP RELEASE generation test
+bool DHCP_TESTER::testDHCPRELEASEGeneration() {
+    Serial.print("DHCP RELEASE:    ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client parsing tests
+bool DHCP_TESTER::runClientParsingTests() {
+    Serial.println("     Client Message Parsing Tests      ");
+    if (!testDHCPOFFERParsing()) return false;
+    if (!testDHCPACKParsing()) return false;
+    if (!testDHCPNAKParsing()) return false;
+    return true; // If we reached here then all the tests passed
+}
+
+// Run Client DHCP OFFER parsing test
+bool DHCP_TESTER::testDHCPOFFERParsing() {
+    Serial.print("DHCP OFFER:      ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client DHCP ACK parsing test
+bool DHCP_TESTER::testDHCPACKParsing() {
+    Serial.print("DHCP ACK:        ");
+    return testPassed(); // If we reached here then all the tests passed
+}
+
+// Run Client DHCP NAK parsing test
+bool DHCP_TESTER::testDHCPNAKParsing() {
+    Serial.print("DHCP NAK:        ");
+    return testPassed(); // If we reached here then all the tests passed
 }
