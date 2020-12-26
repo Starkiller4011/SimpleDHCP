@@ -19,8 +19,8 @@
 
 // DHCP_SERVER Default constructor, this constructor should be avoided
 DHCP_SERVER::DHCP_SERVER() {
-    SERVER_ADDRESS = IPAddress(192,168,0,1);
-    assignAddressPool(IPAddress(192,168,0,1), 255);
+    SERVER_ADDRESS = IPAddress(10,0,0,1);
+    assignAddressPool(SERVER_ADDRESS, 255);
     _verbose = false;
     DHCP_SOCKET.begin(DHCP_SERVER_PORT);
 }
@@ -28,7 +28,7 @@ DHCP_SERVER::DHCP_SERVER() {
 // DHCP_SERVER Intended Constructor, sets the address pool and server IP
 DHCP_SERVER::DHCP_SERVER(IPAddress server_address, uint8_t range) {
     SERVER_ADDRESS = server_address;
-    assignAddressPool(server_address, range);
+    assignAddressPool(SERVER_ADDRESS, range);
     _verbose = false;
     DHCP_SOCKET.begin(DHCP_SERVER_PORT);
 }
@@ -36,7 +36,7 @@ DHCP_SERVER::DHCP_SERVER(IPAddress server_address, uint8_t range) {
 // DHCP_SERVER Intended Constructor, sets the address pool, server IP, and verbosity
 DHCP_SERVER::DHCP_SERVER(IPAddress server_address, uint8_t range, bool verbose) {
     SERVER_ADDRESS = server_address;
-    assignAddressPool(server_address, range);
+    assignAddressPool(SERVER_ADDRESS, range);
     _verbose = verbose;
     DHCP_SOCKET.begin(DHCP_SERVER_PORT);
     if (_verbose) Serial.println(F("DHCP UDP Socket opened"));
@@ -44,6 +44,7 @@ DHCP_SERVER::DHCP_SERVER(IPAddress server_address, uint8_t range, bool verbose) 
 
 // DHCP Server Destructor
 DHCP_SERVER::~DHCP_SERVER() {
+    delete [] _addresses;
 }
 
 // Set the DHCP Address Pool
@@ -64,12 +65,14 @@ void DHCP_SERVER::assignAddressPool(IPAddress server_address, uint8_t address_ra
 
 // Assign network address from available addresses in the pool
 IPAddress DHCP_SERVER::assignAddress(IPAddress requested_ip) {
+    IPAddress address;
     if (isAddressAvailable(requested_ip)) {
-        _addresses[requested_ip[3] + 2] = false;
-        return requested_ip;
+        address = requested_ip;
     } else {
-        return getAddressFromPool();
+        address = getAddressFromPool();
     }
+    if (isAddressAvailable(address)) _addresses[address[3] - 2] = false;
+    return address;
 }
 
 // Get a valid network address from the address pool
@@ -83,8 +86,7 @@ IPAddress DHCP_SERVER::getAddressFromPool() {
     }
     IPAddress address(address_pool.firstOctet, address_pool.secondOctet, address_pool.thirdOctet, fourthOctet);
     if (isAddressAvailable(address)) {
-        _addresses[address[3] + 2] = false;
-        return address
+        return address;
     } else {
         return IPAddress(0, 0, 0, 0);
     }
@@ -97,6 +99,13 @@ bool DHCP_SERVER::isAddressAvailable(IPAddress address) {
     if (address[2] != address_pool.thirdOctet) return false;
     if (address[3] > address_pool.range) return false;
     return _addresses[address[3] - 2];
+}
+
+// Release assigned address
+void DHCP_SERVER::releaseAddress(IPAddress address) {
+    if (!_addresses[address[3] - 2]) {
+        _addresses[address[3] - 2] = true;
+    }
 }
 
 // Parse DHCP Messages: If received from client then will allocate an address as required
@@ -482,9 +491,6 @@ DHCP_TESTER::DHCP_TESTER() {
     uint8_t test_client_mac[] = {0x01, 0xEA, 0xFD, 0xBC, 0x05, 0x06};
     _dhcp_server = new DHCP_SERVER(IPAddress(10, 0, 0, 1), 32);
     _dhcp_client = new DHCP_CLIENT(test_client_mac, 6);
-    Serial.println();
-    _dhcp_server->getAddressFromPool();
-    Serial.println();
 }
 
 DHCP_TESTER::~DHCP_TESTER() {
@@ -526,6 +532,7 @@ bool DHCP_TESTER::runTests() {
 bool DHCP_TESTER::runServerTests() {
     Serial.println(F("********** DHCP Server Tests **********"));
     bool results = true;
+    if (!runServerAddressManagementTests()) results = false;
     if (!runServerMessageGenerationTests()) results = false;
     if (!runServerParsingTests()) results = false;
     return results;
@@ -545,22 +552,58 @@ bool DHCP_TESTER::runServerAddressManagementTests() {
 
 //
 bool DHCP_TESTER::testAddressInRange() {
+    Serial.print(F("In Range:        "));
+    IPAddress address = _dhcp_server->assignAddress(IPAddress(10, 0, 0, 2));
+    if (address != IPAddress(10, 0, 0, 2)) return testFailed();
+    return testPassed(); // If we reached here then all the tests passed
 }
 
 //
 bool DHCP_TESTER::testAddressOutOfRange() {
+    Serial.print(F("Out of Range:    "));
+    IPAddress address = _dhcp_server->assignAddress(IPAddress(192, 168, 1, 353));
+    if (address != IPAddress(10, 0, 0, 3)) return testFailed();
+    return testPassed(); // If we reached here then all the tests passed
 }
 
 //
 bool DHCP_TESTER::testAutoAddressAssignment() {
+    Serial.print(F("Auto Assign:     "));
+    IPAddress address = _dhcp_server->getAddressFromPool();
+    if (address != IPAddress(10, 0, 0, 4)) return testFailed();
+    address = _dhcp_server->assignAddress(address);
+    if (address != IPAddress(10, 0, 0, 4)) return testFailed();
+    address = _dhcp_server->getAddressFromPool();
+    if (address != IPAddress(10, 0, 0, 5)) return testFailed();
+    address = _dhcp_server->assignAddress(address);
+    if (address != IPAddress(10, 0, 0, 5)) return testFailed();
+    address = _dhcp_server->getAddressFromPool();
+    if (address != IPAddress(10, 0, 0, 6)) return testFailed();
+    address = _dhcp_server->assignAddress(address);
+    if (address != IPAddress(10, 0, 0, 6)) return testFailed();
+    address = _dhcp_server->getAddressFromPool();
+    if (address != IPAddress(10, 0, 0, 7)) return testFailed();
+    address = _dhcp_server->assignAddress(address);
+    if (address != IPAddress(10, 0, 0, 7)) return testFailed();
+    return testPassed(); // If we reached here then all the tests passed
 }
 
 //
 bool DHCP_TESTER::testAddressRelease() {
+    Serial.print(F("Release:         "));
+    _dhcp_server->releaseAddress(IPAddress(10, 0, 0, 4));
+    if(!_dhcp_server->_addresses[2]) return testFailed();
+    return testPassed(); // If we reached here then all the tests passed
 }
 
-//
+// Test reassignment of released addresses
 bool DHCP_TESTER::testAddressReassignment() {
+    Serial.print(F("Reassignment:    "));
+    IPAddress address = _dhcp_server->getAddressFromPool();
+    if (address != IPAddress(10, 0, 0, 4)) return testFailed();
+    address = _dhcp_server->assignAddress(address);
+    if (address != IPAddress(10, 0, 0, 4)) return testFailed();
+    return testPassed(); // If we reached here then all the tests passed
 }
 
 // Run Server message generation tests
