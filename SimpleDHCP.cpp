@@ -169,6 +169,7 @@ DHCP_MESSAGE DHCP_SERVER::createDHCPReply(uint8_t message_type, IPAddress client
     case DHCP_OFFER:
         break;
     case DHCP_ACK:
+    
         break;
     case DHCP_NAK:
         break;
@@ -555,12 +556,13 @@ bool DHCP_TESTER::testDHCPNAKGeneration() {
 // Run Server parsing tests
 bool DHCP_TESTER::runServerParsingTests() {
     Serial.println("     Server Message Parsing Tests      ");
-    if (!testDHCPDISCOVERParsing()) return false;
-    if (!testDHCPINFORMParsing()) return false;
-    if (!testDHCPREQUESTParsing()) return false;
-    if (!testDHCPDECLINEParsing()) return false;
-    if (!testDHCPRELEASEParsing()) return false;
-    return true; // If we reached here then all the tests passed
+    bool results = true;
+    if (!testDHCPDISCOVERParsing()) results = false;
+    if (!testDHCPINFORMParsing()) results = false;
+    if (!testDHCPREQUESTParsing()) results = false;
+    if (!testDHCPDECLINEParsing()) results = false;
+    if (!testDHCPRELEASEParsing()) results = false;
+    return results;
 }
 
 // Run Server DHCP DISCOVER parsing test
@@ -596,20 +598,22 @@ bool DHCP_TESTER::testDHCPRELEASEParsing() {
 // Run Client tests
 bool DHCP_TESTER::runClientTests() {
     Serial.println("********** DHCP Client Tests **********");
-    if (!runClientMessageGenerationTests()) return false;
-    if (!runClientParsingTests()) return false;
-    return true; // If we reached here then all the tests passed
+    bool results = true;
+    if (!runClientMessageGenerationTests()) results = false;
+    if (!runClientParsingTests()) results = false;
+    return results;
 }
 
 // Run Client message generation tests
 bool DHCP_TESTER::runClientMessageGenerationTests() {
     Serial.println("    Client Message Generation Tests    ");
-    if (!testDHCPDISCOVERGeneration()) return false;
-    if (!testDHCPINFORMGeneration()) return false;
-    if (!testDHCPREQUESTGeneration()) return false;
-    if (!testDHCPDECLINEGeneration()) return false;
-    if (!testDHCPRELEASEGeneration()) return false;
-    return true; // If we reached here then all the tests passed
+    bool results = true;
+    if (!testDHCPDISCOVERGeneration()) results = false;
+    if (!testDHCPINFORMGeneration()) results = false;
+    if (!testDHCPREQUESTGeneration()) results = false;
+    if (!testDHCPDECLINEGeneration()) results = false;
+    if (!testDHCPRELEASEGeneration()) results = false;
+    return results;
 }
 
 // Run Client DHCP DISCOVER generation test
@@ -645,10 +649,11 @@ bool DHCP_TESTER::testDHCPRELEASEGeneration() {
 // Run Client parsing tests
 bool DHCP_TESTER::runClientParsingTests() {
     Serial.println("     Client Message Parsing Tests      ");
-    if (!testDHCPOFFERParsing()) return false;
-    if (!testDHCPACKParsing()) return false;
-    if (!testDHCPNAKParsing()) return false;
-    return true; // If we reached here then all the tests passed
+    bool results = true;
+    if (!testDHCPOFFERParsing()) results = false;
+    if (!testDHCPACKParsing()) results = false;
+    if (!testDHCPNAKParsing()) results = false;
+    return results;
 }
 
 // Run Client DHCP OFFER parsing test
