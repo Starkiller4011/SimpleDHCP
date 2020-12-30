@@ -262,6 +262,8 @@ private:
     DHCP_MESSAGE createDHCPMessage(uint8_t, uint32_t, IPAddress);   // DHCP Client
 public:
     DHCP_CLIENT();                                                  // DHCP Client
+    DHCP_CLIENT(uint8_t);                                           // DHCP Client
+    DHCP_CLIENT(uint8_t []);                                        // DHCP Client
     DHCP_CLIENT(uint8_t [], uint8_t);                               // DHCP Client
     ~DHCP_CLIENT();                                                 // DHCP Client
 };
@@ -279,11 +281,14 @@ private:
     bool testPassed();                                              // DHCP Tester
     bool runServerTests();                                          // DHCP Tester
     bool runServerAddressManagementTests();                         // DHCP Tester
-    bool testAddressInRange();
-    bool testAddressOutOfRange();
-    bool testAutoAddressAssignment();
-    bool testAddressRelease();
-    bool testAddressReassignment();
+    bool testAddressInRange();                                      // DHCP Tester
+    bool testAddressOutOfRange();                                   // DHCP Tester
+    bool testAutoAddressAssignment();                               // DHCP Tester
+    bool testAddressRelease();                                      // DHCP Tester
+    bool testAddressReassignment();                                 // DHCP Tester
+    bool runServerDebugTests();                                     // DHCP Tester
+    bool testServerMessagePrinter();                                // DHCP Tester
+    bool testServerPacketPrinter();                                 // DHCP Tester
     bool runServerMessageGenerationTests();                         // DHCP Tester
     bool testDHCPOFFERGeneration();                                 // DHCP Tester
     bool testDHCPACKGeneration();                                   // DHCP Tester

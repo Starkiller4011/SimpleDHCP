@@ -7,11 +7,11 @@ void setup() {
     delay(500);
     dhcp_tester = new DHCP_TESTER();
     bool test_results = dhcp_tester->runTests();
-    Serial.println(F("***************************************"));
+    Serial.println("***************************************");
     if (test_results) {
-        Serial.println(F("All DHCP tests passed, library is ready for use"));
+        Serial.println("All DHCP tests passed, library is ready for use");
     } else {
-        Serial.println(F("One or more DHCP tests failed, library is not ready for use"));
+        Serial.println("One or more DHCP tests failed, library is not ready for use");
     }
 }
 
